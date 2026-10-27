@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edición y formato de hojas de cálculo</title>
+<style>
+  :root{--azul:#2f4fd8;--campo:#aabfff;--ok:#0b6b2f;--okbg:#e3f6e9;--bad:#a1181d;--badbg:#fde7e8;--pend:#7a5a00;--pendbg:#fff4d1;--txt:#1b1f2a;--bg:#f2f5fb}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:17px/1.5 Verdana,Tahoma,sans-serif;padding:0 0 110px}
+  .hoja{max-width:900px;margin:0 auto;background:#fff;padding:20px 28px 30px;box-shadow:0 2px 14px #0002}
+  .datos{display:flex;flex-wrap:wrap;gap:14px;padding:12px 0 16px;border-bottom:2px solid var(--azul);margin-bottom:18px}
+  .datos label{font-weight:700;font-size:15px;display:flex;flex-direction:column;gap:3px}
+  .datos input{font:inherit;padding:7px 10px;border:2px solid var(--azul);border-radius:6px;min-width:250px}
+  h1{font:700 24px Arial,sans-serif;margin:0 0 14px}
+  h2{font:700 17px Arial,sans-serif;margin:22px 0 8px}
+  .preg{margin:20px 0;break-inside:avoid}
+  .preg p{margin:0 0 6px}
+  textarea{width:100%;min-height:62px;font:inherit;padding:8px 10px;background:var(--campo);border:2px solid var(--azul);border-radius:3px;resize:vertical}
+  textarea.corta{min-height:42px}
+  textarea:focus,input:focus,button:focus-visible{outline:3px solid #ffb703;outline-offset:1px}
+  .trabajar{margin-top:30px}
+  .rel{display:grid;grid-template-columns:230px 1fr;gap:10px 18px;font-family:Arial,sans-serif;font-size:16px;margin-top:10px}
+  .izq,.der{list-style:none;margin:0;padding:0}
+  .izq li{padding:5px 0 5px 18px;min-height:40px}
+  .der li{display:flex;align-items:center;gap:8px;padding:3px 0;min-height:40px;flex-wrap:wrap}
+  .der input{width:44px;height:34px;text-align:center;font:700 17px Arial;background:var(--campo);border:2px solid var(--azul);border-radius:3px;text-transform:lowercase}
+  .fb{font-weight:700;font-size:14px;padding:2px 8px;border-radius:12px;display:none}
+  .fb.ok{display:inline-block;background:var(--okbg);color:var(--ok);border:1px solid var(--ok)}
+  .fb.bad{display:inline-block;background:var(--badbg);color:var(--bad);border:1px solid var(--bad)}
+  .fb.pend{display:inline-block;background:var(--pendbg);color:var(--pend);border:1px solid var(--pend)}
+  .msg{margin:16px 0;padding:12px 14px;border-radius:8px;background:var(--badbg);color:var(--bad);border:2px solid var(--bad);display:none;font-weight:700}
+  #resumen{display:none;margin:22px 0;padding:14px 18px;border:3px solid var(--azul);border-radius:10px;background:#eef2ff;break-inside:avoid}
+  #resumen .nota{font-size:15px;color:var(--pend);font-weight:700}
+  #resumen .calif{font:700 34px Arial}
+  .barra{position:fixed;right:16px;bottom:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;z-index:5}
+  .barra button{font:700 16px Arial;padding:12px 20px;border:0;border-radius:8px;cursor:pointer;color:#fff;box-shadow:0 2px 8px #0004}
+  #bCal{background:#1f7a3d}#bImp{background:var(--azul)}#bRei{background:#5b6270}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .libre{margin-top:8px;font-size:14px;color:#555}
+  @media(max-width:640px){.hoja{padding:14px}.rel{grid-template-columns:1fr}.datos input{min-width:100%}.barra{left:10px;right:10px}.barra button{flex:1}}
+  @media print{
+    @page{size:letter;margin:14mm}
+    body{background:#fff;padding:0;font-size:12.5pt}.hoja{box-shadow:none;max-width:none;padding:0}
+    .barra,.msg,.libre{display:none!important}
+    textarea{resize:none;overflow:visible;border:1.5px solid #333;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .datos input,.der input{border:0;border-bottom:1.5px solid #000;background:#fff}
+    .der input{border:1.5px solid #000}
+    .preg,.rel li,#resumen,.izq li{break-inside:avoid}
+    .fb{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<main class="hoja" id="hoja">
+  <!-- Datos del alumno (arriba a la izquierda) -->
+  <div class="datos">
+    <label for="nombre">Nombre del alumno<input id="nombre" type="text" autocomplete="name" placeholder="Escribe tu nombre completo"></label>
+    <label for="fecha">Fecha<input id="fecha" type="date"></label>
+  </div>
+
+  <h1>Edición y formato de hojas de cálculo</h1>
+  <div id="resumen" role="status" aria-live="polite"></div>
+  <div id="msg" class="msg" role="alert"></div>
+
+  <h2>Paso a paso:</h2>
+  <p><strong>1.</strong> Contesta las siguientes preguntas escribiendo en los campos de texto.</p>
+  <div id="abiertas"></div>
+
+  <h2 class="trabajar">A trabajar:</h2>
+  <p>Realiza la siguiente actividad. Relaciona los términos de la izquierda con las características de la derecha escribiendo la letra correcta en los campos de texto.</p>
+  <div class="rel"><ul class="izq" id="izq"></ul><ul class="der" id="der"></ul></div>
+  <p class="libre">Usa cada letra una sola vez (a–h).</p>
+</main>
+
+<div class="barra">
+  <button id="bRei" type="button">Reiniciar</button>
+  <button id="bImp" type="button">Imprimir / Guardar como PDF</button>
+  <button id="bCal" type="button">Calificar</button>
+</div>
+
+<script>
+/* ===== 1. CONTENIDO RECONSTRUIDO DEL PDF ===== */
+const PREGUNTAS_ABIERTAS = [
+  {id:"p1", html:"Un buen trabajo escolar debe considerar dos aspectos importantes, el fondo y la forma. Describe brevemente qué es <b>Fondo</b>.", alto:""},
+  {id:"p2", html:"Describe brevemente qué es <b>Forma</b>.", alto:""},
+  {id:"p3", html:"Describe con tus propias palabras lo que entiendes por <b>Editar</b>.", alto:""},
+  {id:"p4", html:"¿Qué es un rango de celdas en Excel?", alto:"corta"},
+  {id:"p5", html:"Dar formato a las hojas de cálculo permite cambiar su fisonomía y hacerlas claras y de apariencia agradable. Define el término <i>fisonomía</i>.", alto:""}
+];
+const TERMINOS = [["a","Editar"],["b","Cortar"],["c","Rango"],["d","Pegar"],["e","Copiar"],["f","Borrar"],["g","Ir a"],["h","Portapapeles"]];
+const CARACTERISTICAS = [
+  {id:"c1", texto:"Insertar un dato copiado o cortado."},
+  {id:"c2", texto:"Memoria donde se guarda el último dato cortado o copiado."},
+  {id:"c3", texto:"Eliminar datos sin guardarlos en la memoria."},
+  {id:"c4", texto:"Eliminar datos y llevarlos a la memoria."},
+  {id:"c5", texto:"Comando que permite desplazarse en la hoja."},
+  {id:"c6", texto:"Bloque de celdas."},
+  {id:"c7", texto:"Llevar un dato a la memoria sin eliminarlo."},
+  {id:"c8", texto:"Corregir o modificar la hoja de cálculo de fondo."}
+];
+
+/* ===== 2. CLAVE DE RESPUESTAS (separada de la presentación) =====
+   Ligada al id de cada característica, no a su posición: la aleatorización no la afecta. */
+const CLAVE_RELACION = {c1:"d", c2:"h", c3:"f", c4:"b", c5:"g", c6:"c", c7:"e", c8:"a"};
+/* Las 5 preguntas abiertas requieren interpretación: se marcan "pendiente de revisión" y no suman ni restan. */
+
+/* ===== 3. UTILIDADES ===== */
+const $ = id => document.getElementById(id);
+const normalizar = t => (t||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z]/g,"");
+const mezclar = arr => { const a=arr.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const hoyISO = () => { const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+let calificado = false;
+
+/* ===== 4. CONSTRUCCIÓN DE LA INTERFAZ ===== */
+function construir(){
+  calificado = false;
+  $("fecha").value = hoyISO();
+  $("resumen").style.display="none"; $("resumen").innerHTML="";
+  $("msg").style.display="none";
+  $("bCal").disabled=false;
+
+  $("abiertas").innerHTML = PREGUNTAS_ABIERTAS.map((p,i)=>`
+    <div class="preg">
+      <p><label for="${p.id}">${p.html}</label></p>
+      <textarea id="${p.id}" class="${p.alto}" aria-label="Respuesta a la pregunta ${i+1}"></textarea>
+      <span class="fb" id="fb_${p.id}"></span>
+    </div>`).join("");
+  document.querySelectorAll("#abiertas textarea").forEach(t=>t.addEventListener("input",()=>{t.style.height="auto";t.style.height=Math.max(t.scrollHeight+4,42)+"px";}));
+
+  $("izq").innerHTML = TERMINOS.map(([l,t])=>`<li>${l})&nbsp;&nbsp; ${t}</li>`).join("");
+  /* Las características se presentan en orden aleatorio en cada nueva actividad */
+  $("der").innerHTML = mezclar(CARACTERISTICAS).map((c,i)=>`
+    <li><input id="r_${c.id}" data-id="${c.id}" maxlength="1" inputmode="text" autocomplete="off" aria-label="Letra para: ${c.texto}">
+    <label for="r_${c.id}">${c.texto}</label> <span class="fb" id="fb_${c.id}"></span></li>`).join("");
+  document.querySelectorAll("#der input").forEach(inp=>inp.addEventListener("input",()=>{inp.value=inp.value.replace(/[^a-hA-H]/g,"").toLowerCase();}));
+}
+
+/* ===== 5. VALIDACIÓN ===== */
+function validar(){
+  const errores=[];
+  if(!$("nombre").value.trim()) errores.push("Escribe el nombre del alumno.");
+  const vacias = PREGUNTAS_ABIERTAS.map((p,i)=>$(p.id).value.trim()?null:(i+1)).filter(Boolean);
+  if(vacias.length) errores.push("Contesta las preguntas abiertas: "+vacias.join(", ")+".");
+  const letras=[]; let faltan=0;
+  document.querySelectorAll("#der input").forEach(inp=>{ const v=normalizar(inp.value); if(!/^[a-h]$/.test(v)) faltan++; else letras.push(v); });
+  if(faltan) errores.push("Faltan "+faltan+" letra(s) en la actividad de relacionar (usa a–h).");
+  if(new Set(letras).size!==letras.length) errores.push("Hay letras repetidas: usa cada letra una sola vez.");
+  return errores;
+}
+
+/* ===== 6. CALIFICACIÓN ===== */
+function calificar(){
+  if(calificado) return;               // evita clics repetidos
+  const errores=validar();
+  const msg=$("msg");
+  if(errores.length){ msg.innerHTML="Antes de calificar:<br>• "+errores.join("<br>• "); msg.style.display="block"; msg.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  msg.style.display="none";
+
+  let aciertos=0; const total=CARACTERISTICAS.length;
+  CARACTERISTICAS.forEach(c=>{
+    const resp=normalizar($("r_"+c.id).value);
+    const ok = resp===CLAVE_RELACION[c.id];
+    if(ok) aciertos++;
+    const fb=$("fb_"+c.id);
+    fb.className="fb "+(ok?"ok":"bad");
+    fb.textContent = ok ? "✔ Correcta" : "✘ Incorrecta";   // no se revela la respuesta correcta
+  });
+  PREGUNTAS_ABIERTAS.forEach(p=>{ const fb=$("fb_"+p.id); fb.className="fb pend"; fb.textContent="⏳ Pendiente de revisión del docente"; });
+
+  const errs=total-aciertos;
+  const calif=Math.round((aciertos/total)*10*100)/100;
+  $("resumen").innerHTML=`<div class="calif">Calificación: ${calif} / 10</div>
+    <div>Aciertos: <b>${aciertos}</b> · Errores: <b>${errs}</b> · Preguntas evaluadas: <b>${total}</b></div>
+    <div class="nota">Pendientes de revisión: ${PREGUNTAS_ABIERTAS.length} preguntas abiertas (1 a 5). No se incluyen en la calificación automática.</div>`;
+  $("resumen").style.display="block";
+
+  // Bloquear respuestas
+  document.querySelectorAll("textarea,#der input,#nombre,#fecha").forEach(e=>{e.readOnly=true;});
+  calificado=true; $("bCal").disabled=true;
+  $("resumen").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+/* ===== 7. IMPRESIÓN Y REINICIO ===== */
+function imprimir(){
+  if(!calificado){ const m=$("msg"); m.innerHTML="Primero completa y califica la actividad para poder imprimirla."; m.style.display="block"; m.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  document.querySelectorAll("textarea").forEach(t=>{t.style.height="auto";t.style.height=(t.scrollHeight+4)+"px";});
+  window.print();
+}
+function reiniciar(){
+  const hayDatos=[...document.querySelectorAll("textarea,#der input")].some(e=>e.value.trim());
+  if(calificado||!hayDatos||confirm("¿Borrar todas las respuestas?")){
+    const nombre=$("nombre").value;
+    document.querySelectorAll("textarea,#der input,#nombre,#fecha").forEach(e=>{e.readOnly=false;});
+    construir(); $("nombre").value=nombre; window.scrollTo({top:0,behavior:"smooth"});
+  }
+}
+$("bCal").addEventListener("click",calificar);
+$("bImp").addEventListener("click",imprimir);
+$("bRei").addEventListener("click",reiniciar);
+construir();
+</script>
+</body>
+</html>
